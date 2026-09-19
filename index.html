@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stay Strong - HD Crystal Badges Edition</title>
+    
+    <!-- Optional online confetti script with graceful fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none;
+        }
+        body {
+            background-color: #030508;
+            color: #F8FAFC;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            text-align: center;
+            padding: 14px 15px;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+            color: #00E5FF;
+            text-transform: uppercase;
+            background: rgba(11, 15, 25, 0.9);
+            backdrop-filter: blur(12px);
+            z-index: 10;
+        }
+        .container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 90px;
+        }
+        #page-tracker { display: block; }
+        #page-history, #page-workout { display: none; }
+
+        .panic-banner {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.45));
+            border: 1px solid rgba(239, 68, 68, 0.6);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+            transition: transform 0.2s;
+        }
+        .panic-banner:active { transform: scale(0.97); }
+        .panic-banner h4 { color: #FF6B6B; font-size: 13px; letter-spacing: 1px; }
+        .panic-banner p { color: #CBD5E1; font-size: 11px; margin-top: 2px; }
+
+        /* ULTRA CRYSTAL CIRCULAR COUNTER */
+        .counter-wrapper {
+            position: relative;
+            width: 230px;
+            height: 230px;
+            margin: 10px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out, box-shadow 0.3s ease;
+            box-shadow: 0 0 35px rgba(0, 229, 255, 0.35), inset 0 0 40px rgba(0, 0, 0, 0.85);
+            filter: contrast(110%) brightness(108%);
+        }
+        
+        /* Gradient Ring Backdrop Overlay */
+        .counter-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle, rgba(5, 7, 10, 0.45) 0%, rgba(5, 7, 10, 0.85) 100%);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .progress-ring-svg {
+            position: absolute;
+            top: 0; left: 0;
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+        .progress-ring-bg { stroke: rgba(15, 23, 42, 0.7); stroke-width: 8; }
+        .progress-ring-circle {
+            stroke: #00E5FF;
+            stroke-width: 8;
+            stroke-dasharray: 691;
+            stroke-dashoffset: 691;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+            filter: drop-shadow(0px 0px 10px rgba(0, 229, 255, 0.8));
+        }
+        .counter-content {
+            position: absolute;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .counter-content .label { 
+            color: #00E5FF; 
+            font-size: 9px; 
+            font-weight: 800; 
+            letter-spacing: 2px; 
+            text-shadow: 0 2px 6px rgba(0,0,0,1); 
+        }
+        .counter-content h2 {
+            font-size: 56px; 
+            font-weight: 900; 
+            line-height: 1; 
+            margin: 2px 0;
+            color: #FFFFFF;
+            text-shadow: 0 0 15px rgba(0,0,0,1), 0 3px 6px rgba(0,0,0,0.9);
+        }
+        .time-details {
+            font-size: 11px; 
+            color: #00E5FF; 
+            font-weight: 700; 
+            font-family: monospace;
+            background: rgba(5, 7, 10, 0.95); 
+            padding: 3px 12px; 
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.6);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.9);
+        }
+        .rank-badge {
+            margin-top: 8px;
+            background: linear-gradient(135deg, rgba(112, 0, 255, 0.9), rgba(0, 229, 255, 0.8));
+            color: #FFFFFF; 
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            font-weight: 800; 
+            padding: 4px 14px; 
+            border-radius: 20px; 
+            font-size: 10px;
+            letter-spacing: 1px; 
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.9), 0 0 10px rgba(0, 229, 255, 0.4);
+        }
+        .next-rank-info { font-size: 11px; color: #94A3B8; text-align: center; margin-top: 6px; font-weight: 600; }
+
+        /* BUTTONS */
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin: 15px auto; }
+        .action-btn {
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #7000FF, #4F00B3);
+            color: white; border: none; border-radius: 20px; font-weight: 700;
+            cursor: pointer; font-size: 12px; transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(112, 0, 255, 0.4);
+        }
+        .action-btn:active { transform: scale(0.97); }
+        .reset-btn { background: rgba(239, 68, 68, 0.15); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.4); box-shadow: none; }
+        .test-btn { background: #0F172A; color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3); box-shadow: none; }
+
+        /* METRICS GRID */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .stat-card {
+            background-color: #0B0F19; border: 1px solid #1E293B; border-radius: 12px;
+            padding: 10px; text-align: center;
+        }
+        .stat-card p { font-size: 10px; color: #64748B; text-transform: uppercase; }
+        .stat-card h3 { font-size: 18px; color: #F8FAFC; margin-top: 2px; }
+
+        /* HEATMAP */
+        .heatmap-section {
+            background-color: #0B0F19; border: 1px solid #1E293B; border-radius: 12px;
+            padding: 12px; margin-top: 15px;
+        }
+        .heatmap-section h4 { font-size: 11px; color: #94A3B8; margin-bottom: 8px; text-transform: uppercase; }
+        .heatmap-grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; }
+        .heatmap-cell { aspect-ratio: 1; background-color: #1E293B; border-radius: 3px; }
+        .heatmap-cell.active { background-color: #00E5FF; box-shadow: 0 0 6px rgba(0, 229, 255, 0.6); }
+
+        /* HIGH-DEFINITION CLEAR BADGES GRID */
+        .badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+        .badge-card {
+            position: relative;
+            background-color: #090D16; 
+            border-radius: 16px;
+            border: 2px solid #151D2A; 
+            transition: all 0.3s ease-in-out; 
+            min-height: 125px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .badge-card.full-img-card {
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        /* DIRECT IMAGE SOURCES VIA CROSS-ORIGIN HYBRID LOAD */
+        #badge-0 { background-image: url('https://i.postimg.cc/GpLXsvJD/aa74f407debfb36187767362962e2719.jpg'); }
+        #badge-1 { background-image: url('https://i.postimg.cc/xjpVj1Qg/887012bdefe4bbe79462e44975a559cf.jpg'); }
+        #badge-3 { background-image: url('https://i.postimg.cc/pLbWxLQk/94fd61b965a78aa53b0cc3cc1632a26d.jpg'); }
+        #badge-5 { background-image: url('https://i.postimg.cc/Zqm5P5CN/ebea6d4a3ad85c038b2a513fb511aa42.jpg'); }
+        #badge-7 { background-image: url('https://i.postimg.cc/W1LNj1my/c85e1e3ae1c3a264d922a03f6fa3803e.jpg'); }
+        #badge-10 { background-image: url('https://i.postimg.cc/wj8qHjcd/365805eb2ceba3bc409db71ed1e10b59.jpg'); }
+        #badge-15 { background-image: url('https://i.postimg.cc/GmwLrmJR/a47a620c7ee80087e2e3a83937b3825a.jpg'); }
+        #badge-20 { background-image: url('https://i.postimg.cc/vZFYMZLb/de93feda4a8cca7969590199f2b780a9.jpg'); }
+        #badge-30 { background-image: url('https://i.postimg.cc/P5WtqnK0/2a023088fed307774997cab60a3ad2c0.jpg'); }
+        #badge-45 { background-image: url('https://i.postimg.cc/4x6J3RBC/b537979d5f3cb263c43bfc28ad122df3.jpg'); }
+
+        /* ULTRA CLEAR UNLOCKED BADGES */
+        .badge-card.full-img-card.unlocked {
+            border: 2px solid #00E5FF;
+            box-shadow: 0 0 18px rgba(0, 229, 255, 0.7), inset 0 0 8px rgba(255,255,255,0.2);
+            filter: contrast(115%) brightness(110%) saturate(110%);
+        }
+
+        /* LOCKED STATE (DEEPER DARK FADE) */
+        .badge-card.full-img-card:not(.unlocked) {
+            filter: grayscale(100%) brightness(35%) opacity(0.4);
+        }
+
+        .badge-card span { font-size: 32px; filter: grayscale(100%); opacity: 0.3; }
+        .badge-card.unlocked span { filter: grayscale(0%); opacity: 1; }
+
+        /* FULL IMAGE DISPLAY MODAL */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 7, 10, 0.95); backdrop-filter: blur(12px); z-index: 100;
+            flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; text-align: center;
+        }
+        
+        .img-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 200;
+            align-items: center; justify-content: center; padding: 15px;
+        }
+        .img-modal img {
+            max-width: 95%; max-height: 85vh; border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.7); border: 2px solid #00E5FF;
+            filter: contrast(115%) brightness(105%);
+        }
+        .img-modal-close {
+            position: absolute; top: 20px; right: 20px; color: #FFF; font-size: 28px;
+            cursor: pointer; background: rgba(255,255,255,0.15); width: 42px; height: 42px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
+
+        .breath-circle {
+            width: 130px; height: 130px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,229,255,0.4) 0%, rgba(112,0,255,0.1) 70%);
+            border: 2px solid #00E5FF; display: flex; align-items: center; justify-content: center;
+            margin: 25px 0; font-size: 15px; font-weight: bold; color: #FFF;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+            animation: breatheAnimation 16s infinite ease-in-out;
+        }
+        @keyframes breatheAnimation {
+            0%, 100% { transform: scale(0.85); background-color: rgba(0,229,255,0.1); }
+            25% { transform: scale(1.25); background-color: rgba(0,229,255,0.4); }
+            50% { transform: scale(1.25); }
+            75% { transform: scale(0.85); }
+        }
+        .close-modal-btn {
+            margin-top: 15px; background: #1E293B; border: 1px solid #475569;
+            color: #FFF; padding: 10px 20px; border-radius: 18px; cursor: pointer;
+        }
+
+        nav {
+            background-color: #090D16; display: flex; justify-content: space-around;
+            padding: 8px 0; border-top: 1px solid rgba(0, 229, 255, 0.15); position: fixed; bottom: 0;
+            width: 100%; z-index: 10;
+        }
+        .nav-btn {
+            color: #64748B; background: none; border: none; font-size: 10px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center;
+        }
+        .nav-btn.active { color: #00E5FF; font-weight: bold; }
+        .nav-btn span { font-size: 18px; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+
+    <header id="app-title">STAY STRONG</header>
+
+    <div id="page-tracker" class="container">
+        <div class="panic-banner" onclick="openPanicModal()">
+            <h4>🚨 HELP! I HAVE AN URGE</h4>
+            <p>Click here for immediate breathing exercise</p>
+        </div>
+
+        <div id="counter-card" class="counter-wrapper">
+            <svg class="progress-ring-svg">
+                <circle class="progress-ring-bg" cx="115" cy="115" r="108" fill="transparent"/>
+                <circle id="ring-bar" class="progress-ring-circle" cx="115" cy="115" r="108" fill="transparent"/>
+            </svg>
+            <div class="counter-content">
+                <span class="label">CURRENT STREAK</span>
+                <h2 id="day-count">0</h2>
+                <div id="time-count" class="time-details">00h : 00m : 00s</div>
+                <div id="user-rank" class="rank-badge">The Awakened</div>
+            </div>
+        </div>
+        <div id="next-rank-txt" class="next-rank-info">Next Rank in: 1 Day</div>
+        
+        <div class="btn-group">
+            <button id="main-action-btn" class="action-btn" onclick="handleTracking()">Start Journey</button>
+            <button id="test-btn" class="action-btn test-btn" onclick="testAddDay()">+1 Day (Test)</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <p>Best Record</p>
+                <h3 id="stat-best">0 Days</h3>
+            </div>
+            <div class="stat-card">
+                <p>Total Relapses</p>
+                <h3 id="stat-relapses">0</h3>
+            </div>
+        </div>
+
+        <div class="heatmap-section">
+            <h4>LAST 28 DAYS ACTIVITY</h4>
+            <div class="heatmap-grid" id="heatmap-container"></div>
+        </div>
+
+        <h3 style="margin-top: 18px; font-size: 11px; letter-spacing: 1px; color: #94A3B8; text-transform: uppercase;">Rank Milestones</h3>
+        <div class="badge-grid">
+            <div id="badge-0" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-1" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-3" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-5" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-7" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-10" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-15" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-20" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-30" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            <div id="badge-45" class="badge-card full-img-card" onclick="openImageModal(this)"></div>
+            
+            <div id="badge-50" class="badge-card"><span>🏰</span></div>
+            <div id="badge-60" class="badge-card"><span>🏛️</span></div>
+            <div id="badge-90" class="badge-card"><span>🦅</span></div>
+            <div id="badge-100" class="badge-card"><span>🎖️</span></div>
+            <div id="badge-150" class="badge-card"><span>🦁</span></div>
+            <div id="badge-365" class="badge-card"><span>🌌</span></div>
+        </div>
+    </div>
+
+    <div id="page-history" class="container">
+        <h3 style="color: #94A3B8; font-size: 12px; margin-bottom: 8px;">DAILY REFLECTION</h3>
+        <p style="color: #64748B; font-style: italic; font-size: 13px; line-height: 1.5; background:#0B0F19; padding:12px; border-radius:10px; border:1px solid #1E293B;">
+            "Discipline is choosing between what you want now and what you want most."
+        </p>
+    </div>
+
+    <div id="page-workout" class="container">
+        <h3 style="font-size: 12px; margin-bottom: 10px; color: #94A3B8;">URGE KILLER EXERCISES</h3>
+        <div style="background:#0B0F19; padding:12px; border-radius:10px; border:1px solid #1E293B; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h4 style="font-size:13px;">1. Push-ups (To Failure)</h4>
+                <p style="color:#64748B; font-size:11px;">Redirect blood flow to body muscles</p>
+            </div>
+            <span style="color:#00E5FF; font-weight:bold; font-size:12px;">Max Reps</span>
+        </div>
+        <div style="background:#0B0F19; padding:12px; border-radius:10px; border:1px solid #1E293B; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h4 style="font-size:13px;">2. Cold Water Splash</h4>
+                <p style="color:#64748B; font-size:11px;">Instant nervous system shock</p>
+            </div>
+            <span style="color:#00E5FF; font-weight:bold; font-size:12px;">2 Mins</span>
+        </div>
+    </div>
+
+    <div id="panicModal" class="modal">
+        <h2 style="color: #FF6B6B;">TAKE A DEEP BREATH</h2>
+        <p style="color: #94A3B8; font-size: 12px; margin-top: 5px;">Follow the circle to regain self-control</p>
+        <div class="breath-circle" id="breathText">BREATHE</div>
+        <p style="color: #CBD5E1; font-size: 11px; max-width: 260px;">Urges are temporary, but your strength is permanent. Stay strong!</p>
+        <button class="close-modal-btn" onclick="closePanicModal()">I Feel Better Now</button>
+    </div>
+
+    <div id="imgModal" class="img-modal" onclick="closeImageModal()">
+        <span class="img-modal-close">&times;</span>
+        <img id="modalImg" src="" alt="Badge Preview">
+    </div>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchPage('tracker', this)"><span>⚡</span>Tracker</button>
+        <button class="nav-btn" onclick="switchPage('history', this)"><span>📊</span>Analytics</button>
+        <button class="nav-btn" onclick="switchPage('workout', this)"><span>🏋️‍♂️</span>Workout</button>
+    </nav>
+
+    <script>
+        // Automatic Image Caching via LocalStorage DataURI / Canvas
+        const badgeIds = [0, 1, 3, 5, 7, 10, 15, 20, 30, 45];
+        
+        function cacheImagesLocally() {
+            badgeIds.forEach(id => {
+                const el = document.getElementById(`badge-${id}`);
+                if(!el) return;
+                const cachedData = localStorage.getItem(`cached_badge_${id}`);
+                if (cachedData) {
+                    el.style.backgroundImage = `url('${cachedData}')`;
+                } else {
+                    const onlineUrl = window.getComputedStyle(el).backgroundImage.replace(/url\(['"]?(.*?)['"]?\)/, '$1');
+                    if(onlineUrl && onlineUrl.startsWith('http')) {
+                        const img = new Image();
+                        img.crossOrigin = 'Anonymous';
+                        img.onload = function() {
+                            try {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0);
+                                const dataURL = canvas.toDataURL('image/jpeg');
+                                localStorage.setItem(`cached_badge_${id}`, dataURL);
+                                el.style.backgroundImage = `url('${dataURL}')`;
+                            } catch(e) { }
+                        };
+                        img.src = onlineUrl;
+                    }
+                }
+            });
+        }
+
+        let startTime = localStorage.getItem('nofap_start_time');
+        let bestStreak = parseInt(localStorage.getItem('nofap_best_streak') || 0);
+        let relapses = parseInt(localStorage.getItem('nofap_relapse_count') || 0);
+        let testDaysAdded = parseInt(localStorage.getItem('nofap_test_days') || 0);
+        let previousUnlockedCount = parseInt(localStorage.getItem('nofap_unlocked_count') || 0);
+        let timerInterval;
+
+        const milestones = [0, 1, 3, 5, 7, 10, 15, 20, 30, 45, 50, 60, 90, 100, 150, 365];
+
+        function openImageModal(element) {
+            const bgImage = window.getComputedStyle(element).backgroundImage;
+            const imageUrl = bgImage.replace(/url\(['"]?(.*?)['"]?\)/, '$1');
+            if (imageUrl && imageUrl !== 'none') {
+                document.getElementById('modalImg').src = imageUrl;
+                document.getElementById('imgModal').style.display = 'flex';
+            }
+        }
+
+        function closeImageModal() {
+            document.getElementById('imgModal').style.display = 'none';
+        }
+
+        function renderHeatmap(days) {
+            const container = document.getElementById('heatmap-container');
+            container.innerHTML = '';
+            for(let i=0; i<28; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell';
+                if(i < days) cell.classList.add('active');
+                container.appendChild(cell);
+            }
+        }
+
+        function switchPage(pageId, btn) {
+            document.getElementById('page-tracker').style.display = 'none';
+            document.getElementById('page-history').style.display = 'none';
+            document.getElementById('page-workout').style.display = 'none';
+            
+            document.querySelectorAll('.nav-btn').forEach(button => button.classList.remove('active'));
+            document.getElementById('page-' + pageId).style.display = 'block';
+            btn.classList.add('active');
+
+            const header = document.getElementById('app-title');
+            if(pageId === 'tracker') header.innerText = 'STAY STRONG';
+            if(pageId === 'history') header.innerText = 'ANALYTICS';
+            if(pageId === 'workout') header.innerText = 'WORKOUT';
+        }
+
+        function handleTracking() {
+            if (!startTime) {
+                startTime = new Date().getTime();
+                localStorage.setItem('nofap_start_time', startTime);
+                testDaysAdded = 0;
+                localStorage.setItem('nofap_test_days', 0);
+                updateUI();
+                timerInterval = setInterval(updateUI, 1000);
+            } else {
+                if (confirm("Are you sure you want to reset your streak? Realize the mistake and come back stronger!")) {
+                    clearInterval(timerInterval);
+                    relapses += 1;
+                    localStorage.setItem('nofap_relapse_count', relapses);
+                    startTime = null;
+                    testDaysAdded = 0;
+                    localStorage.removeItem('nofap_start_time');
+                    localStorage.setItem('nofap_test_days', 0);
+                    localStorage.setItem('nofap_unlocked_count', 0);
+                    
+                    document.getElementById('day-count').innerText = "0";
+                    document.getElementById('time-count').innerText = "00h : 00m : 00s";
+                    document.getElementById('main-action-btn').innerText = "Start Journey";
+                    document.getElementById('main-action-btn').classList.remove('reset-btn');
+                    document.getElementById('user-rank').innerText = "The Awakened";
+                    document.getElementById('next-rank-txt').innerText = "Next Rank in: 1 Day";
+                    
+                    document.querySelectorAll('.badge-card').forEach(b => b.classList.remove('unlocked'));
+                    document.getElementById('ring-bar').style.strokeDashoffset = "691";
+                    renderHeatmap(0);
+                    updateUI();
+                }
+            }
+        }
+
+        function testAddDay() {
+            if(!startTime) { alert("Please click 'Start Journey' first!"); return; }
+            testDaysAdded += 1;
+            localStorage.setItem('nofap_test_days', testDaysAdded);
+            updateUI();
+        }
+
+        function openPanicModal() { document.getElementById('panicModal').style.display = 'flex'; }
+        function closePanicModal() { document.getElementById('panicModal').style.display = 'none'; }
+
+        function triggerConfetti() {
+            try {
+                if (typeof confetti === 'function') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            } catch(e) {}
+        }
+
+        function getRank(days) {
+            if (days >= 365) return "Celestial Emperor 🌌";
+            if (days >= 150) return "Lion Monarch 🦁";
+            if (days >= 100) return "Royal Guard 🎖️";
+            if (days >= 90)  return "Lord Warrior 🦅";
+            if (days >= 60)  return "Castle Lord 🏛️";
+            if (days >= 50)  return "Knight-Marshal 🏰";
+            if (days >= 45)  return "Royal Warrior 👑";
+            if (days >= 30)  return "Shadow Warrior 🥷";
+            if (days >= 20)  return "Vanguard 💎";
+            if (days >= 15)  return "Elite Soldier ⚔️";
+            if (days >= 10)  return "Iron Soldier 🪓";
+            if (days >= 7)   return "Novice Soldier 🥊";
+            if (days >= 5)   return "Elite Civilian ⚙️";
+            if (days >= 3)   return "Resolute Citizen 🛡️";
+            if (days >= 1)   return "Civilian 🔥";
+            return "The Awakened 🌱";
+        }
+
+        function updateUI() {
+            document.getElementById('stat-best').innerText = bestStreak + " Days";
+            document.getElementById('stat-relapses').innerText = relapses;
+
+            let currentStreakDays = 0;
+
+            if (startTime) {
+                document.getElementById('main-action-btn').innerText = "Relapsed (Reset)";
+                document.getElementById('main-action-btn').classList.add('reset-btn');
+
+                let currentTime = new Date().getTime();
+                let difference = currentTime - startTime;
+
+                let realDays = Math.floor(difference / (1000 * 60 * 60 * 24));
+                currentStreakDays = realDays + testDaysAdded;
+                
+                let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+                document.getElementById('day-count').innerText = currentStreakDays;
+                document.getElementById('time-count').innerText = 
+                    `${hours.toString().padStart(2, '0')}h : ${minutes.toString().padStart(2, '0')}m : ${seconds.toString().padStart(2, '0')}s`;
+
+                if (currentStreakDays > bestStreak) {
+                    bestStreak = currentStreakDays;
+                    localStorage.setItem('nofap_best_streak', bestStreak);
+                    document.getElementById('stat-best').innerText = bestStreak + " Days";
+                }
+            } else {
+                renderHeatmap(0);
+            }
+
+            document.getElementById('user-rank').innerText = getRank(currentStreakDays);
+            renderHeatmap(currentStreakDays);
+
+            let nextMilestone = milestones.find(m => m > currentStreakDays);
+            if (nextMilestone) {
+                let remaining = nextMilestone - currentStreakDays;
+                document.getElementById('next-rank-txt').innerText = `Next Rank in: ${remaining} Day${remaining > 1 ? 's' : ''}`;
+            }
+
+            let maxOffset = 691;
+            let currentOffset = maxOffset - (maxOffset * Math.min(currentStreakDays, 365) / 365);
+            document.getElementById('ring-bar').style.strokeDashoffset = currentOffset;
+
+            let unlockedCount = 0;
+            let currentHighestUnlockedMilestone = 0;
+
+            milestones.forEach(bDay => {
+                let card = document.getElementById(`badge-${bDay}`);
+                if (currentStreakDays >= bDay) {
+                    if (card) card.classList.add('unlocked');
+                    unlockedCount++;
+                    currentHighestUnlockedMilestone = bDay;
+                } else {
+                    if (card) card.classList.remove('unlocked');
+                }
+            });
+
+            let activeBadgeCard = document.getElementById(`badge-${currentHighestUnlockedMilestone}`);
+            let counterCard = document.getElementById('counter-card');
+            
+            if (activeBadgeCard) {
+                let bgImage = window.getComputedStyle(activeBadgeCard).backgroundImage;
+                if (bgImage && bgImage !== 'none') {
+                    counterCard.style.backgroundImage = bgImage;
+                } else {
+                    counterCard.style.backgroundImage = 'none';
+                }
+            } else {
+                counterCard.style.backgroundImage = 'none';
+            }
+
+            if (unlockedCount > previousUnlockedCount && previousUnlockedCount !== 0) triggerConfetti();
+            localStorage.setItem('nofap_unlocked_count', unlockedCount);
+            previousUnlockedCount = unlockedCount;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            cacheImagesLocally();
+            if (startTime) {
+                updateUI();
+                timerInterval = setInterval(updateUI, 1000);
+            } else {
+                updateUI();
+            }
+        });
+    </script>
+</body>
+</html>
